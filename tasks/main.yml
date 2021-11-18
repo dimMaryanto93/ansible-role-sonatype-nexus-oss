@@ -102,7 +102,7 @@
 - name: Show admin password for sonatype nexus-oss 
   block:
   - name: get info init root password for gitlab
-    shell: "cat /etc/gitlab/initial_root_password"
+    shell: "cat {{ nexus_installation_path }}/sonatype-work/nexus3/admin.password"
     register: init_admin_password
     when: nexus_admin_password_print
 

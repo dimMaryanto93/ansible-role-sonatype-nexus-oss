@@ -1,2 +1,112 @@
 ---
 # tasks file for ansile-role-sonatype-nexus-oss
+- name: Setup & pre-requisites to install nexus
+  block:
+  - name: Ensure group 'nexus' exists
+    ansible.builtin.group:
+      name: "{{ nexus_user }}"
+      state: present
+
+  - name: Add the user 'nexus' exists
+    ansible.builtin.user:
+      name: "{{ nexus_user }}"
+      comment: user for using nexus-oss application
+      group: "{{ nexus_user }}"
+      append: yes
+
+  - name: Create a directory ==> {{ nexus_installation_path }} if it does not exist 
+    ansible.builtin.file:
+      path: "{{ nexus_installation_path }}"
+      state: directory
+      mode: '7777'
+      owner: "{{ nexus_user }}"
+      group: "{{ nexus_user }}"
+
+- name: Install sonatype nexus-oss packages
+  block:
+  - name: Unarchive sonatype nexus-oss
+    ansible.builtin.unarchive:
+      remote_src: yes
+      src: "{{ nexus_download_url }}"
+      dest: "{{ nexus_installation_path }}"
+      mode: '0777'
+      owner: "{{ nexus_user }}"
+      group: "{{ nexus_user }}"
+
+  - name: Give access to user 'nexus' recusively
+    file: 
+      dest: "{{ nexus_installation_path }}" 
+      owner: "{{ nexus_user }}" 
+      group: "{{ nexus_user }}" 
+      mode: '0777' 
+      recurse: yes
+
+  - shell: "ls -d {{ nexus_installation_path }}/nexus-* | tail -n 1"
+    register: nexus_version_dir_name
+
+  - name: Create a symbolic link
+    ansible.builtin.file:
+      src: "{{ nexus_version_dir_name.stdout }}/bin/nexus"
+      dest: "{{ nexus_installation_path }}/nexus"
+      owner: "{{ nexus_user }}" 
+      group: "{{ nexus_user }}" 
+      state: link
+
+- name: Configure rule iptables & selinux
+  block:
+  - name: Put SELinux in permissive mode
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
+    when: ansible_os_family == 'RedHat'
+
+  - name: Setup firewall-cmd for RedHat family
+    ansible.posix.firewalld:
+      port: "{{ nexus_default_port }}/{{ nexus_default_proto }}"
+      zone: public
+      permanent: yes
+      state: enabled
+    when: ansible_os_family == 'RedHat'
+  
+  - name: Setup ufw for Debian family
+    community.general.ufw:
+      state: enabled
+      port: "{{ nexus_default_port }}"
+      proto: "{{ nexus_default_proto }}"
+      policy: allow
+    when: ansible_os_family == 'Debian'
+
+- name: Create service for sonatype nexus-oss
+  block: 
+  - name: nexus.service file
+    template: 
+      src: nexus.service.j2 
+      dest: /etc/systemd/system/nexus.service
+      mode: 644
+  
+  - name: Reload sonatype nexus-oss service
+    service: 
+      name: nexus.service
+      state: reloaded
+  
+  - name: Start sonatype nexus-oss service
+    service: 
+      name: nexus.service
+      state: started
+      enabled: yes
+
+- name: Pause for 1 minutes to startup service
+  pause:
+    minutes: 1
+
+- name: Show admin password for sonatype nexus-oss 
+  block:
+  - name: get info init root password for gitlab
+    shell: "cat /etc/gitlab/initial_root_password"
+    register: init_admin_password
+    when: nexus_admin_password_print
+
+  - name: Debug admin password
+    debug: 
+      msg: "{{ init_admin_password.stdout }}"
+    when: nexus_admin_password_print

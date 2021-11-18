@@ -1,5 +1,5 @@
 ---
-- hosts: localhost
-  remote_user: root
+- hosts: ["all"]
+  become: true
   roles:
-    - ansile-role-sonatype-nexus-oss
+    - ../../ansible-role-sonatype-nexus-oss

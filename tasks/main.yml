@@ -84,16 +84,12 @@
       dest: /etc/systemd/system/nexus.service
       mode: 644
   
-  - name: Reload sonatype nexus-oss service
-    service: 
-      name: nexus.service
-      state: reloaded
-  
-  - name: Start sonatype nexus-oss service
-    service: 
-      name: nexus.service
-      state: started
+  - name: Restart service nexus
+    ansible.builtin.systemd:
+      state: restarted
+      daemon_reload: yes
       enabled: yes
+      name: nexus
 
 - name: Pause for 1 minutes to startup service
   pause:

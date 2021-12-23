@@ -109,29 +109,6 @@
 
   - name: Debug admin password
     debug: 
-      msg: "{{ init_admin_password.stdout }}"
-    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
-
-  - name: Changed admin password
-    uri:
-      url: '{{ nexus_api_baseurl }}/v1/security/users/{{ nexus_admin_user }}/change-password'
-      user: "{{ nexus_admin_user }}"
-      password: "{{ init_admin_password.stdout }}"
-      method: PUT
-      force_basic_auth: yes
-      status_code: 204
-      body: "{{ nexus_admin_password }}"
-    failed_when: false
-    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
-    register: changed_admin_password_status
-
-  - name: Debug response changed default password admin
-    debug: 
-      msg: "{{ changed_admin_password_status.stdout }}"
-    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
-
-  - name: Remove file init default password if success auth
-    file:
-      path: '{{ nexus_default_admin_password_location }}'
-      state: absent
-    when: changed_admin_password_status.status == 204
+      msg: "{{ init_admin_password }}"
+    when: 
+      - init_admin_password_exists.stat.exists

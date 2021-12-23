@@ -1,5 +1,8 @@
 ---
 - hosts: ["all"]
   become: true
+  vars:
+    nexus_changed_admin_password: true
+    nexus_admin_password: 'admin123'
   roles:
     - ../../ansible-role-sonatype-nexus-oss

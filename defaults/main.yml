@@ -1,8 +1,14 @@
 ---
 # defaults file for ansile-role-sonatype-nexus-oss
+nexus_admin_password: 'randomPassword'
+nexus_admin_password_print: true
+nexus_admin_user: 'admin'
+nexus_changed_admin_password: false
+nexus_default_admin_password_location: '{{ nexus_installation_path }}/sonatype-work/nexus3/admin.password'
+nexus_default_port: 8081
+nexus_default_schema: http
+nexus_default_proto: tcp
 nexus_download_url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
 nexus_installation_path: /opt/nexus
 nexus_user: nexus
-nexus_admin_password_print: true
-nexus_default_port: 8081
-nexus_default_proto: tcp
+nexus_api_baseurl: '{{ nexus_default_schema }}://localhost:{{ nexus_default_port }}/service/rest'

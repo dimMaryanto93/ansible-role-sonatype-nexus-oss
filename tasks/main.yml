@@ -95,14 +95,43 @@
   pause:
     minutes: 1
 
-- name: Show admin password for sonatype nexus-oss 
+- name: Change default init admin password by nexus
   block:
+  - name: Check init password is exists
+    stat:
+      path: '{{ nexus_default_admin_password_location }}'
+    register: init_admin_password_exists
+
   - name: get info init root password for gitlab
-    shell: "cat {{ nexus_installation_path }}/sonatype-work/nexus3/admin.password"
+    shell: "cat {{ nexus_default_admin_password_location }}"
     register: init_admin_password
-    when: nexus_admin_password_print
+    when: init_admin_password_exists.stat.exists
 
   - name: Debug admin password
     debug: 
       msg: "{{ init_admin_password.stdout }}"
-    when: nexus_admin_password_print
+    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
+
+  - name: Changed admin password
+    uri:
+      url: '{{ nexus_api_baseurl }}/v1/security/users/{{ nexus_admin_user }}/change-password'
+      user: "{{ nexus_admin_user }}"
+      password: "{{ init_admin_password.stdout }}"
+      method: PUT
+      force_basic_auth: yes
+      status_code: 204
+      body: "{{ nexus_admin_password }}"
+    failed_when: false
+    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
+    register: changed_admin_password_status
+
+  - name: Debug response changed default password admin
+    debug: 
+      msg: "{{ changed_admin_password_status.stdout }}"
+    when: init_admin_password_exists.stat.exists && nexus_changed_admin_password
+
+  - name: Remove file init default password if success auth
+    file:
+      path: '{{ nexus_default_admin_password_location }}'
+      state: absent
+    when: changed_admin_password_status.status == 204

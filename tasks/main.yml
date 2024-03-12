@@ -1,5 +1,14 @@
 ---
 # tasks file for ansile-role-sonatype-nexus-oss
+- name: Load a variable file based on the OS type
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - '{{ansible_os_family}}.yaml'
+      paths:
+        - 'vars'
+
 - name: Setup & pre-requisites to install nexus
   block:
   - name: Ensure group 'nexus' exists
@@ -21,6 +30,16 @@
       mode: '7777'
       owner: "{{ nexus_user }}"
       group: "{{ nexus_user }}"
+
+- name: Install dependency for nexus
+  block:
+  - name: Install OpenJDK 8
+    ansible.builtin.package:
+      name: 
+      - "{{ packages_jdk }}"
+      - curl
+      - wget
+      state: present
 
 - name: Install sonatype nexus-oss packages
   block:
@@ -90,25 +109,3 @@
       daemon_reload: yes
       enabled: yes
       name: nexus
-
-- name: Pause for 1 minutes to startup service
-  pause:
-    minutes: 1
-
-- name: Change default init admin password by nexus
-  block:
-  - name: Check init password is exists
-    stat:
-      path: '{{ nexus_default_admin_password_location }}'
-    register: init_admin_password_exists
-
-  - name: get info init root password for gitlab
-    shell: "cat {{ nexus_default_admin_password_location }}"
-    register: init_admin_password
-    when: init_admin_password_exists.stat.exists
-
-  - name: Debug admin password
-    debug: 
-      msg: "{{ init_admin_password }}"
-    when: 
-      - init_admin_password_exists.stat.exists

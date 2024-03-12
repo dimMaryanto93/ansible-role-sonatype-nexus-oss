@@ -84,6 +84,7 @@
       port: "{{ nexus_default_port }}/{{ nexus_default_proto }}"
       zone: public
       permanent: yes
+      immediate: true
       state: enabled
     when: ansible_os_family == 'RedHat'
   

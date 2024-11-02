@@ -33,13 +33,26 @@
 
 - name: Install dependency for nexus
   block:
-  - name: Install OpenJDK 8
+  - name: Install default packages
     ansible.builtin.package:
       name: 
-      - "{{ packages_jdk }}"
-      - curl
-      - wget
+        - curl
+        - wget
       state: present
+  - name: Download Oracle JDK 17
+    ansible.builtin.get_url:
+      url: "{{ download_jdk_url }}"
+      dest: /tmp/{{ jdk_binary }}
+      mode: '7777'
+  - name: Install Oracle JDK 17 for Redhat package
+    ansible.builtin.yum:
+      name: /tmp/{{ jdk_binary }}
+      state: present
+    when: ansible_os_family == 'RedHat'
+  - name: Install Oracle JDK 17 for Debian package
+    ansible.builtin.apt:
+      deb: /tmp/{{ jdk_binary }}
+    when: ansible_os_family == 'Debian'
 
 - name: Install sonatype nexus-oss packages
   block:

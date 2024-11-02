@@ -59,7 +59,7 @@
   - name: Unarchive sonatype nexus-oss
     ansible.builtin.unarchive:
       remote_src: yes
-      src: "{{ nexus_download_url }}"
+      src: "{{ nexus_download_url | default('https://download.sonatype.com/nexus/3/latest-unix.tar.gz') }}"
       dest: "{{ nexus_installation_path }}"
       mode: '0777'
       owner: "{{ nexus_user }}"

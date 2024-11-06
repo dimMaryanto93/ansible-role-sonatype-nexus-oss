@@ -47,6 +47,7 @@
   - name: Install Oracle JDK 17 for Redhat package
     ansible.builtin.yum:
       name: /tmp/{{ jdk_binary }}
+      disable_gpg_check: true
       state: present
     when: ansible_os_family == 'RedHat'
   - name: Install Oracle JDK 17 for Debian package
